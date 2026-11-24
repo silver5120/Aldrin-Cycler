@@ -70,24 +70,52 @@ $$\Omega(x, y) = \frac{1}{2}(x^2 + y^2) + \frac{1-\mu}{r_1} + \frac{\mu}{r_2}, \
 
 ---
 
+## Earth–Mars Aldrin Cycler (1-Synodic Twin Escalator Architecture)
+
+![Earth-Mars Twin Aldrin Cycler Animation](assets/mars_cycler_animation.gif)
+
+![Earth-Mars Aldrin Cycler Engineering Analysis](assets/mars_cycler_analysis.png)
+
+Buzz Aldrin's original 1985 Earth–Mars cycler (`a = 1.600 AU`, `e = 0.3904`, `T_orb = 2.023 yr`) uses an Earth gravity assist every synodic period (`779.95 d`) to precess its line of apsides by **+48.72°**, delivering a fast **145.4-day** Earth → Mars transfer (with a mirror-symmetric Inbound "Down-Escalator" cycler for 145.4-day Mars → Earth returns).
+
+| Parameter | Aldrin Cycler (145 d) | Minimum-Energy Hohmann (259 d) |
+| :--- | :---: | :---: |
+| **Earth $v_{\infty, E}$** | **6.40 km/s** | 2.95 km/s |
+| **Taxi $\Delta v$ from 400 km LEO** | **4.92 km/s** ideal (~5.12 km/s ops) | 3.57 km/s |
+| **Mars $v_{\infty, M}$** | **9.68 km/s** | 2.65 km/s |
+| **Mars Entry Interface ($125\text{ km}$)** | **10.87 km/s** (3.76× KE, 7.3× conv. heating) | 5.60 km/s |
+| **Mars Propulsive Capture (400 km LMO)** | **7.42 km/s** (impractical chemically) | 2.08 km/s |
+| **Mars Aerocapture Trim $\Delta v$** | **~0.14 km/s** (mandatory) | ~0.14 km/s |
+| **15-Yr Eccentric Mars Correction Burns** | **avg 835 m/s/cycle** (211–2,638 m/s across 7 oppositions) | N/A |
+| **B-Plane Flyby Sensitivity** | **1 km Earth error → 3,901 km Mars / 111,569 km Earth miss** | N/A |
+
+---
+
 ## Repository Structure
 
 ```text
 Aldrin-Cycler/
 ├── src/
-│   ├── cr3bp.py           # Planar Earth-Moon CR3BP ODEs, STM, Lagrange points, differential corrector
-│   ├── cycler_solver.py   # Shamrock (C-2-R) & Ballistic Arenstorf solvers + Tsiolkovsky trade study
-│   ├── visualize.py       # Generates 4-panel analysis PNG & dual-frame animated GIF
-│   └── build_web.py       # Compiles self-contained interactive HTML5 simulator
+│   ├── cr3bp.py             # Planar Earth-Moon CR3BP ODEs, STM, Lagrange points, differential corrector
+│   ├── cycler_solver.py     # Earth-Moon Shamrock (C-2-R) & Arenstorf solvers + Tsiolkovsky trade study
+│   ├── mars_cycler.py       # Earth-Mars Aldrin Cycler, 15-yr eccentric Lambert optimizer, aerocapture & stability
+│   ├── visualize.py         # Earth-Moon 4-panel PNG & dual-frame animated GIF
+│   ├── visualize_mars.py    # Earth-Mars 4-panel PNG & dual-frame animated GIF
+│   ├── build_web.py         # Compiles interactive Earth-Moon HTML5 simulator (web/index.html)
+│   └── build_mars_web.py    # Compiles interactive Earth-Mars HTML5 simulator (web/mars.html)
 ├── data/
-│   └── cycler_solution.json  # Exact SciPy DOP853 numerical trajectory & metrics
+│   ├── cycler_solution.json
+│   └── mars_cycler_solution.json
 ├── assets/
 │   ├── aldrin_cycler_animation.gif
-│   └── cycler_analysis.png
+│   ├── cycler_analysis.png
+│   ├── mars_cycler_animation.gif
+│   └── mars_cycler_analysis.png
 ├── web/
-│   └── index.html         # Interactive HTML5 dual-frame orbit simulator (open directly in any browser)
+│   ├── index.html           # Interactive Earth-Moon simulator
+│   └── mars.html            # Interactive Earth-Mars simulator
 ├── tests/
-│   └── test_cr3bp.py      # Pytest numerical physics verification suite
+│   └── test_cr3bp.py        # Pytest numerical physics verification suite (Moon + Mars)
 └── requirements.txt
 ```
 
@@ -96,15 +124,12 @@ Aldrin-Cycler/
 ```bash
 pip install -r requirements.txt
 
-# 1. Solve the CR3BP cycler trajectories and export JSON
-python src/cycler_solver.py
+# Earth-Moon Cycler
+python src/cycler_solver.py && python src/visualize.py && python src/build_web.py
 
-# 2. Generate the 4-panel plot and dual-frame GIF animation
-python src/visualize.py
+# Earth-Mars Cycler
+python src/mars_cycler.py && python src/visualize_mars.py && python src/build_mars_web.py
 
-# 3. Build the interactive HTML5 animation (open web/index.html in a browser)
-python src/build_web.py
-
-# 4. Run numerical physics verification tests
+# Run all numerical physics verification tests
 python -m pytest -v
 ```

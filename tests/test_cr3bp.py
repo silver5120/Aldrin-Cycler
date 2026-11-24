@@ -67,3 +67,25 @@ def test_trade_study_breakeven_ordering():
     assert tr["dv_earth_taxi_km_s"] > tr["dv_direct_tli_km_s"]  # Oberth penalty at 3000 km perigee
     assert tr["imleo_cycler_per_flight_t"] < tr["imleo_apollo_lean_t"] < tr["imleo_direct_per_flight_t"]
     assert tr["breakeven_vs_heavy_flights"] < tr["breakeven_vs_lean_flights"]
+
+
+def test_mars_aldrin_cycler_physics():
+    from mars_cycler import solve_ideal_aldrin_cycler
+
+    m = solve_ideal_aldrin_cycler()
+    # Match Byrnes, Longuski & Aldrin (1993) analytical circular-coplanar parameters
+    assert 1.59 < m["a_au"] < 1.61
+    assert 0.38 < m["e"] < 0.40
+    assert 142.0 < m["tof_fast_days"] < 149.0
+    assert 6.2 < m["v_inf_earth_km_s"] < 6.7
+    assert 9.4 < m["v_inf_mars_km_s"] < 10.0
+    # Earth flyby turn angle exceeds 400 km ballistic limit (~80 deg vs ~72 deg)
+    assert m["earth_turn_deficit_deg"] > 5.0
+    # LEO taxi delta-v penalty over Hohmann
+    assert m["dv_leo_taxi_ideal_km_s"] > m["dv_leo_hohmann_km_s"] + 1.0
+    # Mars aerocapture mandatory (propulsive LMO > 7 km/s, entry > 10.5 km/s)
+    assert m["dv_mars_propulsive_lmo_km_s"] > 7.0
+    assert m["v_ei_mars_cycler_km_s"] > 10.5
+    # Strong B-plane flyby instability (>50,000 km Earth miss per 1 km flyby error)
+    assert m["stability_earth_miss_per_km_fb_km"] > 50000.0
+
