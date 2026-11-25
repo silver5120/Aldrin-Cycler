@@ -133,3 +133,19 @@ python src/mars_cycler.py && python src/visualize_mars.py && python src/build_ma
 # Run all numerical physics verification tests
 python -m pytest -v
 ```
+
+---
+
+## Cislunar Skyhooks (Momentum-Exchange Tethers)
+
+An animated explainer and trade study of Earth–Moon rotating tethers lives in [`web/cislunar_skyhooks.html`](web/cislunar_skyhooks.html) (open it in a browser). It has a to-scale lunar rotovator animation (full vs. partial), an Earth–Moon loop animation (schematic or true scale), a tether-mass chart for Zylon, Dyneema and Kevlar, an Earth-side vs Moon-side hazard comparison, and a phased build plan.
+
+[`src/tether_budget.py`](src/tether_budget.py) reproduces the numbers:
+
+| One-way, LEO ↔ lunar surface | Rocket Δv | Propellant per kg delivered (Isp 370 s) |
+| :--- | :---: | :---: |
+| Rockets only | 5.77 km/s | 3.91 kg |
+| Lunar rotovator only (150 km arm, 1.61 km/s tip, 1.77 g) | ~3.2 km/s | 1.40 kg |
+| Rotovator + elliptical LEO tether (400 × 11,140 km, 1.54 km/s tip) | ~0.2 km/s | 0.06 kg |
+
+A tip speed of ~1.5–1.6 km/s needs a tether of 2–4× the payload mass in Zylon or Dyneema. A circular-orbit LEO tether that throws straight to the Moon (3.3 km/s tip) needs 37–300×.

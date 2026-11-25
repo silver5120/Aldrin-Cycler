@@ -1,0 +1,638 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}</style>
+<title>Cislunar Skyhooks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column (~68ch) with full-bleed instrument panels for the two animations and the chart.
+   Deliberate single dark theme: a mission-console look, regolith grey + tether amber on deep space blue. */
+:root {
+  color-scheme: dark;
+  --space: #0a0d14;
+  --panel: #111620;
+  --panel-2: #171d2a;
+  --line: #262e3f;
+  --ink: #e8eaf0;
+  --ink-2: #b4bac8;
+  --muted: #7f879a;
+  --regolith: #a9a397;
+  --tether: #f0a23b;
+  --earth: #3987e5;
+  --ox: #199e70;
+  --warn: #ec835a;
+  --good: #0ca30c;
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+body { background: var(--space); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 40px 64px; display: grid; gap: 56px; }
+.prose { max-width: 68ch; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; letter-spacing: 0.005em; }
+h1 { font-size: clamp(2.4rem, 6vw, 3.8rem); font-weight: 700; line-height: 1.02; }
+h2 { font-size: 1.75rem; font-weight: 600; line-height: 1.15; }
+h3 { font-size: 1.15rem; font-weight: 600; }
+p { margin: 0; }
+.stack { display: grid; gap: 14px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--tether); }
+.lede { font-size: 1.2rem; color: var(--ink-2); max-width: 60ch; }
+.verdict { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.verdict div { border-top: 2px solid var(--tether); padding-top: 10px; }
+.verdict b { display: block; font-family: var(--f-display); font-size: 1.1rem; margin-bottom: 2px; }
+.verdict span { color: var(--ink-2); font-size: 0.95rem; }
+a { color: var(--earth); }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--tether); outline-offset: 2px; }
+code, .mono { font-family: var(--f-mono); font-size: 0.9em; }
+
+/* instrument panel */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.panel-bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--panel-2); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg button { font: 500 13px var(--f-body); color: var(--ink-2); background: transparent; border: 0; padding: 6px 12px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--tether); color: #14100a; }
+.ctrl { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; color: var(--muted); }
+.ctrl label { display: inline-flex; gap: 6px; align-items: center; }
+.ctrl input[type=range] { width: 110px; accent-color: var(--tether); }
+.btn { font: 500 13px var(--f-body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 6px 12px; cursor: pointer; }
+canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; max-width: 100%; background: var(--space); }
+@media (max-width: 560px) { canvas { aspect-ratio: 4 / 4; } }
+.readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); border-top: 1px solid var(--line); }
+.readouts div { padding: 10px 14px; border-right: 1px solid var(--line); }
+.readouts dt { font-family: var(--f-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.readouts dd { margin: 2px 0 0; font-family: var(--f-mono); font-size: 15px; font-variant-numeric: tabular-nums; color: var(--ink); }
+.caption { padding: 10px 14px; font-size: 14px; color: var(--ink-2); border-top: 1px solid var(--line); }
+.caption .step { color: var(--tether); font-family: var(--f-mono); font-size: 13px; }
+.key { display: inline-flex; align-items: center; gap: 6px; margin-right: 14px; font-size: 13px; color: var(--ink-2); }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+/* tables */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14.5px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+thead th { font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); background: var(--panel-2); font-weight: 500; }
+tbody th { font-weight: 600; color: var(--ink); width: 18%; }
+td { color: var(--ink-2); }
+tr:last-child td, tr:last-child th { border-bottom: 0; }
+.pill { display: inline-block; font-family: var(--f-mono); font-size: 11px; padding: 1px 7px; border-radius: 99px; border: 1px solid; margin-right: 6px; white-space: nowrap; }
+.pill.hi { color: var(--warn); border-color: var(--warn); }
+.pill.lo { color: var(--good); border-color: var(--good); }
+.pill.mid { color: var(--tether); border-color: var(--tether); }
+
+/* phases */
+.phases { display: grid; gap: 0; border-left: 2px solid var(--line); margin-left: 6px; }
+.phase { position: relative; padding: 0 0 26px 26px; display: grid; gap: 6px; }
+.phase::before { content: ""; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--space); border: 2px solid var(--tether); }
+.phase .when { font-family: var(--f-mono); font-size: 12.5px; color: var(--tether); }
+.phase p, .phase li { color: var(--ink-2); max-width: 70ch; }
+.phase ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; }
+
+/* chart */
+.chart-wrap { position: relative; padding: 8px 6px 4px; }
+.chart-wrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.tip { position: absolute; pointer-events: none; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; font-size: 12.5px; font-family: var(--f-mono); color: var(--ink); white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 0; }
+.note { font-size: 13.5px; color: var(--muted); }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+.cols > div { min-width: 0; }
+.opt { border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 8px; background: var(--panel); }
+.opt p { color: var(--ink-2); font-size: 15px; }
+.opt .tag { font-family: var(--f-mono); font-size: 12px; }
+.sources li { color: var(--ink-2); font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="wrap">
+
+<header class="stack">
+  <div class="eyebrow">Earth–Moon momentum-exchange tethers · study, Nov 2026</div>
+  <h1>Cislunar Skyhooks</h1>
+  <p class="lede">A spinning cable in orbit can catch a payload at its slow-moving bottom tip and fling it from its fast-moving top tip. No propellant leaves the system; the tether pays in orbital momentum. The question is where the physics and the risk let you build one first.</p>
+  <div class="verdict">
+    <div><b>Start at the Moon</b><span>A lunar tip needs about 1.6 km/s. Today's fibers can do that at 2–5× the payload mass.</span></div>
+    <div><b>Earth side: start in LEO</b><span>Catch payloads that are already in orbit. Don't try to catch from the atmosphere.</span></div>
+    <div><b>Keep each tether under ~2 km/s</b><span>Above that, tether mass grows exponentially. Split big jobs across tethers or let the vehicle do part of the job.</span></div>
+  </div>
+</header>
+
+<!-- ============ LUNAR CLOSE-UP ============ -->
+<section class="stack">
+  <div class="prose stack">
+    <div class="eyebrow">Animation 1 · to scale</div>
+    <h2>Lunar rotovator, close up</h2>
+    <p>This uses real orbital mechanics around a non-rotating Moon. The tether's center orbits at circular speed. It spins in the same direction as a rolling wheel, so its bottom tip nearly stops relative to the ground. The camera follows the tether's center, so the surface scrolls past beneath it.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-bar">
+      <div class="seg" role="group" aria-label="Rotovator type">
+        <button id="m-full" aria-pressed="true">Full rotovator (tip reaches the ground)</button>
+        <button id="m-part" aria-pressed="false">Partial (tip stays 30 km up)</button>
+      </div>
+      <div class="ctrl">
+        <button class="btn" id="l-play">Pause</button>
+        <label for="l-speed">Time warp <input id="l-speed" type="range" min="10" max="200" value="45"> <span id="l-speed-v" class="mono">45×</span></label>
+      </div>
+    </div>
+    <canvas id="lunar" width="1600" height="900" aria-label="Animated lunar rotovator lifting and delivering payloads"></canvas>
+    <dl class="readouts" id="l-read"></dl>
+    <div class="caption">
+      <span class="key"><span class="dot" style="background:var(--ox)"></span>Lunar export (oxygen, water), lifted and thrown toward Earth</span>
+      <span class="key"><span class="dot" style="background:var(--earth)"></span>Earth cargo, caught and set down</span>
+      <span class="key"><span class="dot" style="background:var(--tether)"></span>Tether tip path over the ground</span>
+      <p class="note" style="margin-top:6px">The orbit is drawn circular. A real design would use an elliptical orbit and operate at periapsis (see "Momentum is the real budget" below).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SYSTEM ============ -->
+<section class="stack">
+  <div class="prose stack">
+    <div class="eyebrow">Animation 2 · schematic or true scale</div>
+    <h2>The full Earth–Moon loop</h2>
+    <p>A LEO booster tether catches cargo from a rocket and throws it toward the Moon. The lunar rotovator catches it and sets it down. Lunar oxygen travels the other way. Two-way traffic is what keeps both tethers' momentum topped up. Switch to true scale to see how small these structures are next to the distances involved.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-bar">
+      <div class="seg" role="group" aria-label="Scale">
+        <button id="s-schem" aria-pressed="true">Schematic</button>
+        <button id="s-true" aria-pressed="false">True scale</button>
+      </div>
+      <div class="ctrl"><button class="btn" id="s-play">Pause</button></div>
+    </div>
+    <canvas id="system" width="1600" height="900" aria-label="Animated Earth–Moon tether transport loop"></canvas>
+    <div class="caption"><span class="step" id="s-step">—</span></div>
+  </div>
+</section>
+
+<!-- ============ MATERIALS ============ -->
+<section class="stack">
+  <div class="prose stack">
+    <div class="eyebrow">The physics wall</div>
+    <h2>Why tip speed decides everything</h2>
+    <p>A spinning tether has to hold itself together as well as the payload. Each fiber has a characteristic velocity, <span class="mono">V<sub>c</sub> = √(2σ / SF·ρ)</span>. Required tether mass grows roughly as <span class="mono">e<sup>(V/V<sub>c</sub>)²</sup></span> (Moravec; Hoyt). For today's best fibers, V<sub>c</sub> is about 1.5–2 km/s. A lunar tip is under that limit. An Earth skyhook that catches from the atmosphere is far beyond it.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-bar">
+      <div class="legend" id="legend"></div>
+      <div class="seg" role="group" aria-label="Safety factor">
+        <button id="sf2" aria-pressed="false">Safety factor 2 (cargo)</button>
+        <button id="sf3" aria-pressed="true">Safety factor 3 (crew)</button>
+      </div>
+    </div>
+    <div class="chart-wrap" id="chart-wrap"><svg id="chart" viewBox="0 0 900 420" role="img" aria-label="Tether-to-payload mass ratio versus tip speed for three fibers"></svg><div class="tip" id="tip" hidden></div></div>
+    <div class="caption note">The y-axis is tether mass ÷ payload mass on a log scale. These are ideal tapered tethers. Redundant multi-strand construction, the grapple, and the central station add about 1.5–3× more. The ballast mass needed to absorb momentum is separate.</div>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Job</th><th>Tip speed</th><th>Zylon, SF 2</th><th>Zylon, SF 3</th><th>Verdict</th></tr></thead>
+      <tbody id="jobs"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ DANGER ============ -->
+<section class="stack">
+  <div class="prose stack">
+    <div class="eyebrow">Risk</div>
+    <h2>How dangerous is each side?</h2>
+    <p>The Earth side is far more dangerous. The physics is harder there, and the orbits it shares are crowded with things that belong to other people.</p>
+  </div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Hazard</th><th>Earth side (LEO)</th><th>Moon side (low lunar orbit)</th></tr></thead>
+      <tbody>
+        <tr><th>Debris &amp; micrometeoroid cuts</th><td><span class="pill hi">High</span>In 1994, SEDS-2's single-strand tether was cut after about 4 days. A tether hundreds of km long is a big target, so it must be multi-strand (a "Hoytether"), where one cut doesn't sever it.</td><td><span class="pill lo">Low</span>Micrometeoroids only. There is no debris population from past launches. Multi-strand construction is still needed.</td></tr>
+        <tr><th>Collision with satellites</th><td><span class="pill hi">High</span>A long, spinning, slowly precessing structure sweeps through the 340–570 km megaconstellation shells. It can't dodge quickly, so everyone else must.</td><td><span class="pill lo">Low</span>Only a handful of orbiters exist, and they can be coordinated.</td></tr>
+        <tr><th>Environment</th><td><span class="pill mid">Medium</span>Atomic oxygen erodes polymer fibers. If the tip dips below ~150 km, drag and heating start. Zylon degrades in UV.</td><td><span class="pill mid">Medium</span>Hard vacuum, UV, and roughly 2-hour thermal cycles. Dyneema creeps and softens when hot, so it needs coatings or a different fiber.</td></tr>
+        <tr><th>Orbit stability</th><td><span class="pill mid">Medium</span>Every lift lowers the station's orbit. If the perigee gets too low, a multi-hundred-tonne structure reenters. Electrodynamic reboost against Earth's magnetic field works here.</td><td><span class="pill mid">Medium</span>Mascons make most low lunar orbits unstable. You must use "frozen" inclinations (~27°, 50°, 76°, 86°). With no magnetic field, reboost needs thrusters or balanced traffic.</td></tr>
+        <tr><th>Missed catch</th><td><span class="pill hi">High</span>Closing speeds are hypersonic. A bad release sends the payload into the atmosphere or onto the wrong trajectory.</td><td><span class="pill lo">Low–Med</span>The relative speed at the bottom tip is nearly zero. A partial rotovator meets the vehicle 30 km up, so a missed lander simply flies its own abort.</td></tr>
+        <tr><th>Tether break</th><td><span class="pill hi">High</span>The pieces and payload fly into unplanned orbits, and some may reenter uncontrolled. Third parties are at risk.</td><td><span class="pill lo">Low</span>The hardware is lost, perhaps crashing on the Moon. Almost nobody else is at risk.</td></tr>
+        <tr><th>Crew g-load</th><td><span class="pill mid">Medium</span>A 3.3 km/s tip needs an arm of at least 370 km to stay under 3 g.</td><td><span class="pill lo">Low</span>A 150 km arm at 1.6 km/s gives 1.8 g. That's gentler than Soyuz reentry.</td></tr>
+        <tr><th>Rules &amp; liability</th><td><span class="pill hi">High</span>It falls under the Liability Convention, debris-mitigation rules, and the concerns of every LEO operator.</td><td><span class="pill lo">Low</span>Artemis Accords "safety zones" are probably enough.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ ATMOSPHERE vs LEO ============ -->
+<section class="stack">
+  <div class="prose stack">
+    <div class="eyebrow">Earth side</div>
+    <h2>Start in the atmosphere or in LEO?</h2>
+    <p>Start in LEO. Rockets already deliver payloads to LEO cheaply, so the tether only has to add the next 1.5–2 km/s. Catching from the atmosphere means building a hypersonic aircraft that doesn't exist and a tether whose mass is out of reach.</p>
+  </div>
+  <div class="cols">
+    <div class="opt"><span class="tag" style="color:var(--warn)">Not before 2060</span><h3>Atmospheric catch (Boeing HASTOL)</h3><p>A Mach 10–17 aircraft at ~100 km hands its payload to a tip moving 3.5–4 km/s. The tether would weigh 100–3,000× the payload. The fastest air-breather so far, X-43A, sustained Mach 9.6 for about 10 seconds. The rendezvous window lasts seconds, with heating at the tip.</p></div>
+    <div class="opt"><span class="tag" style="color:var(--tether)">2050s+, if fibers improve</span><h3>Suborbital rocket catch</h3><p>A reusable booster lofts the payload to ~150–200 km at ~4–5 km/s, and the tip covers the remaining ~3 km/s. That still takes 30–300× the payload in tether mass. It's attractive only if carbon-nanotube or graphene fibers reach the market.</p></div>
+    <div class="opt"><span class="tag" style="color:var(--good)">Earliest Earth-side option</span><h3>Orbit-to-orbit from LEO (MXER / Hoyt)</h3><p>The payload rides a normal rocket to LEO. A tether in an elliptical orbit (perigee 400 km, apogee ~11,000 km) catches it at 7.67 km/s with its bottom tip and throws it at 10.76 km/s from its top tip. That's the full 3.1 km/s from a tip spinning only ~1.5 km/s. Tether mass is 2.5–5× the payload. Between throws, an electrodynamic tether pushes on Earth's magnetic field to restore momentum without propellant.</p></div>
+  </div>
+</section>
+
+<!-- ============ MOMENTUM ============ -->
+<section class="prose stack">
+  <div class="eyebrow">The catch nobody puts on the poster</div>
+  <h2>Momentum is the real budget</h2>
+  <p>Lifting 1 t from the Moon's surface and throwing it at 3.2 km/s takes 3,200 t·m/s of momentum out of the tether. If the station has 50× the payload's mass, its speed drops about 64 m/s. In the circular 150 km orbit shown above, that would lower the far side of the orbit by roughly 300 km, straight into the ground. There are three fixes, and real designs use all of them:</p>
+  <ul style="margin:0; padding-left:20px; display:grid; gap:6px; color:var(--ink-2)">
+    <li><b style="color:var(--ink)">Elliptical orbit, operations at periapsis.</b> A momentum loss at periapsis mostly lowers the apoapsis, so the catch point stays put. This is why Hoyt's "Moon-Whip" design uses an eccentric orbit.</li>
+    <li><b style="color:var(--ink)">Balance traffic.</b> Catching Earth cargo and setting it down adds momentum, and lifting lunar exports removes it. An early lunar base imports more than it exports, which leaves a surplus the tether can spend on lifts.</li>
+    <li><b style="color:var(--ink)">Make up the difference with electric thrusters.</b> Restoring 2 km/s·t per lift with 3,000 s Isp burns about 70 kg of propellant per tonne lifted. A chemical lander flying the same trip burns about 700 kg per tonne, plus the lander's own mass.</li>
+  </ul>
+</section>
+
+<!-- ============ ARCHITECTURE ============ -->
+<section class="stack">
+  <div class="prose stack">
+    <div class="eyebrow">Recommendation</div>
+    <h2>A staged architecture</h2>
+    <p>Each phase removes the biggest unknown before the next one spends money. No rotating tether has ever caught a payload in orbit, so that comes first.</p>
+  </div>
+  <div class="phases">
+    <div class="phase"><span class="when">Phase 0 · 2027–2031 · tens of $M</span><h3>Catch demo in LEO</h3>
+      <ul><li>Two smallsats spin a 1–10 km multi-strand tether. The tip autonomously grapples and releases a cooperative target at tens of m/s.</li>
+      <li>Fly a second tether to show electrodynamic reboost. Use short-lived orbits below 400 km so failures reenter quickly.</li>
+      <li>Retires the catch mechanism, spin control, and strand-cut survival risks.</li></ul></div>
+    <div class="phase"><span class="when">Phase 1 · early–mid 2030s</span><h3>Lunar partial rotovator, cargo only</h3>
+      <ul><li>Near-polar frozen orbit serving the south-pole ice sites. 80 km arm, ~1.0 km/s tip, tip passing about 30 km above the surface.</li>
+      <li>Hoppers fly a ~0.7 km/s suborbital hop to meet the tip, instead of the ~1.9 km/s it takes to reach orbit and back. They never fly near the terrain at speed.</li>
+      <li>Tether mass about 1–2× the payload. Ballast comes from spent landers, later from bagged regolith. Solar-electric thrusters provide reboost.</li></ul></div>
+    <div class="phase"><span class="when">Phase 2 · late 2030s</span><h3>Full lunar rotovator, crew-rated</h3>
+      <ul><li>150 km arm, ~1.6 km/s tip touching down at near-zero speed, 1.8 g at the tip. Landing and launch need almost no propellant, apart from precision trims.</li>
+      <li>A full rotovator throws payloads at ~3.2 km/s, which is beyond lunar escape. It can send oxygen and water straight onto Earth-return trajectories.</li></ul></div>
+    <div class="phase"><span class="when">Phase 3 · 2040s</span><h3>LEO booster tether, balanced by lunar oxygen</h3>
+      <ul><li>Elliptical-orbit tether (perigee 400 km, apogee ~11,000 km, ~1.5 km/s tip) with electrodynamic reboost, supplying the whole 3.1 km/s to the Moon. Rocket ΔV for LEO ↔ lunar surface drops from 5.8 km/s to ~0.2 km/s each way. Its perigee operations are coordinated around the megaconstellation shells.</li>
+      <li>Lunar oxygen sent down to LEO depot customers restores momentum. This is the closed cislunar loop Hoyt and Forward proposed.</li></ul></div>
+    <div class="phase"><span class="when">Phase 4 · only if fibers improve</span><h3>Suborbital-catch Earth skyhook</h3>
+      <ul><li>Worth revisiting only if nanotube or graphene fiber with a characteristic velocity above ~3 km/s becomes a commercial product. The atmospheric-catch HASTOL design stays shelved.</li></ul></div>
+  </div>
+</section>
+
+<!-- ============ HERITAGE ============ -->
+<section class="stack">
+  <div class="prose stack">
+    <div class="eyebrow">What has flown</div>
+    <h2>Heritage and the gap</h2>
+    <p>Tethers tens of km long have been deployed several times. Spinning a tether and catching a payload with it has never been done.</p>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Mission</th><th>Year</th><th>What happened</th></tr></thead>
+    <tbody>
+      <tr><th>SEDS-1</th><td class="mono">1993</td><td>Deployed a 20 km hanging tether and released the end mass into reentry. This was the first momentum-exchange release.</td></tr>
+      <tr><th>SEDS-2</th><td class="mono">1994</td><td>Held a 20 km tether stable, but the single strand was cut after about 4 days.</td></tr>
+      <tr><th>TSS-1R (Shuttle)</th><td class="mono">1996</td><td>Deployed 19.7 km before the tether broke from electrical arcing. It produced electrodynamic current.</td></tr>
+      <tr><th>TiPS</th><td class="mono">1996</td><td>A 4 km tether survived in orbit for about a decade.</td></tr>
+      <tr><th>YES2</th><td class="mono">2007</td><td>Deployed 31.7 km, the longest structure ever placed in space.</td></tr>
+      <tr><th>KITE (HTV-6)</th><td class="mono">2017</td><td>An electrodynamic tether that failed to deploy.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="prose stack sources">
+  <div class="eyebrow">Sources &amp; further reading</div>
+  <ul style="margin:0; padding-left:18px; display:grid; gap:4px">
+    <li><a href="https://ntrs.nasa.gov/citations/19980202363" target="_blank" rel="noopener">Hoyt &amp; Forward, Cislunar Tether Transport System (NASA NTRS)</a></li>
+    <li><a href="https://ntrs.nasa.gov/api/citations/20060047739/downloads/20060047739.pdf" target="_blank" rel="noopener">MXER tether studies (NASA NTRS)</a></li>
+    <li><a href="https://image-ppubs.uspto.gov/dirsearch-public/print/downloadPdf/6173922" target="_blank" rel="noopener">Hoytether failure-resistant multiline tether patent</a> (staging and mass-ratio figures)</li>
+    <li><a href="https://en.wikipedia.org/wiki/Skyhook_(structure)" target="_blank" rel="noopener">Skyhook (structure)</a>, including Boeing's HASTOL findings</li>
+    <li><a href="https://en.wikipedia.org/wiki/Space_tether" target="_blank" rel="noopener">Space tether missions</a></li>
+    <li><a href="https://www.ri.cmu.edu/publications/a-non-synchronous-orbital-skyhook" target="_blank" rel="noopener">Moravec, A Non-Synchronous Orbital Skyhook</a></li>
+    <li><a href="https://theses.gla.ac.uk/2686/1/2011cmurrayPhD.pdf" target="_blank" rel="noopener">Murray, momentum-exchange tether thesis (Glasgow)</a></li>
+    <li><a href="https://iafastro.directory/iac/paper/id/82924/abstract-pdf/IAC-24,B4,6A,6,x82924.brief.pdf" target="_blank" rel="noopener">ADRASTEA tether demo (IAC 2024)</a></li>
+    <li><a href="https://www.centauri-dreams.org/2025/03/07/spaceline-a-design-for-a-lunar-space-elevator/" target="_blank" rel="noopener">Spaceline lunar space elevator</a> and <a href="https://www.arxiv.org/pdf/1609.00709" target="_blank" rel="noopener">arXiv 1609.00709</a> (the L1-elevator alternative)</li>
+  </ul>
+  <p class="note">Mass ratios, g-loads, orbital speeds, and hop ΔV on this page come from our own calculations. Fiber strengths: Zylon 5.8 GPa / 1,560 kg/m³, Dyneema SK99 4.1 GPa / 975 kg/m³, Kevlar 49 3.6 GPa / 1,440 kg/m³.</p>
+</section>
+</div>
+
+<script>
+(() => {
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = { tether: css('--tether'), earth: css('--earth'), ox: css('--ox'), reg: css('--regolith'), ink: css('--ink'), ink2: css('--ink-2'), muted: css('--muted'), line: css('--line'), space: css('--space'), warn: css('--warn') };
+const MONO = '"IBM Plex Mono", ui-monospace, monospace';
+
+function fitCanvas(cv) {
+  const dpr = Math.min(devicePixelRatio || 1, 2);
+  const r = cv.getBoundingClientRect();
+  const w = Math.max(300, Math.round(r.width)), h = Math.max(200, Math.round(r.height));
+  if (cv.width !== w * dpr || cv.height !== h * dpr) { cv.width = w * dpr; cv.height = h * dpr; }
+  const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, W: w, H: h };
+}
+function stars(n, seed) { let s = seed; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647; return Array.from({ length: n }, () => [rnd(), rnd(), rnd()]); }
+const STARS = stars(220, 7);
+function drawStars(ctx, W, H) { for (const [x, y, b] of STARS) { ctx.fillStyle = `rgba(220,226,240,${0.15 + b * 0.5})`; ctx.fillRect(x * W, y * H, b > 0.9 ? 1.6 : 1, b > 0.9 ? 1.6 : 1); } }
+
+/* ---------------- tether mass ratio ---------------- */
+function erf(x) { const t = 1 / (1 + 0.3275911 * Math.abs(x)); const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; }
+function massRatio(V, Vc) { const x = V / Vc; return Math.sqrt(Math.PI) * x * Math.exp(x * x) * erf(x); }
+const FIBERS = [
+  { name: 'Zylon (PBO)', s: 5.8e9, rho: 1560, col: 'var(--series-1)' },
+  { name: 'Dyneema SK99', s: 4.1e9, rho: 975, col: 'var(--series-2)' },
+  { name: 'Kevlar 49', s: 3.6e9, rho: 1440, col: 'var(--series-3)' },
+];
+const Vc = (f, sf) => Math.sqrt(2 * f.s / sf / f.rho) / 1000;
+
+/* ================= LUNAR CLOSE-UP ================= */
+const MU = 4902.8, RM = 1737.4;
+const MODES = {
+  full: { L: 150, h: 150, vtip: null },
+  part: { L: 80, h: 110, vtip: 1.0 },
+};
+let lmode = 'full', lplay = !reduce, warp = 45, tsim = 300;
+let M; // derived
+function setupMode() {
+  const m = MODES[lmode]; const r = RM + m.h; const vorb = Math.sqrt(MU / r);
+  const vtip = m.vtip ?? vorb;
+  M = { ...m, r, vorb, vtip, Om: vorb / r, w: vtip / m.L };
+  M.Trel = 2 * Math.PI / (M.w - M.Om);
+  M.cache = new Map();
+  const g = vtip * vtip * 1000 / m.L / 9.81;
+  const vthrow = vorb + vtip;
+  const vesc = Math.sqrt(2 * MU / (r + m.L));
+  const ratioZ = massRatio(vtip, Vc(FIBERS[0], 3));
+  let hop = '—';
+  if (lmode === 'part') { const arc = ballistic(tipState(0), -2, 2000, true); hop = arc.vEnd.toFixed(2) + ' km/s'; }
+  document.getElementById('l-read').innerHTML = [
+    ['Arm length', m.L + ' km'], ['Tip speed (spin)', vtip.toFixed(2) + ' km/s'], ['Tip at bottom', (vorb - vtip).toFixed(2) + ' km/s · ' + (m.h - m.L) + ' km up'],
+    ['Load at tip', g.toFixed(2) + ' g'], ['Throw speed at top', vthrow.toFixed(2) + ' km/s (escape ' + vesc.toFixed(2) + ')'],
+    ['Lander ΔV to meet tip', lmode === 'part' ? hop : '≈ 0 (hook on pad)'], ['Tether ÷ payload', ratioZ.toFixed(1) + '× (Zylon, SF 3)'],
+    ['Sim clock', '<span id="l-clock">—</span>'],
+  ].map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+}
+function centerAt(t) { const th = M.Om * t; return [M.r * Math.cos(th), M.r * Math.sin(th), th]; }
+function tipState(t) {
+  const th = M.Om * t, ph = Math.PI + M.w * t;
+  const x = M.r * Math.cos(th) + M.L * Math.cos(ph), y = M.r * Math.sin(th) + M.L * Math.sin(ph);
+  const vx = -M.vorb * Math.sin(th) - M.L * M.w * Math.sin(ph), vy = M.vorb * Math.cos(th) + M.L * M.w * Math.cos(ph);
+  return [x, y, vx, vy];
+}
+function acc(x, y) { const r3 = Math.pow(x * x + y * y, 1.5); return [-MU * x / r3, -MU * y / r3]; }
+function ballistic(s0, dt, tmax, stopAtSurface) {
+  let s = s0.slice(); const pts = [[s[0], s[1]]]; let t = 0;
+  const f = st => { const a = acc(st[0], st[1]); return [st[2], st[3], a[0], a[1]]; };
+  while (Math.abs(t) < tmax) {
+    const k1 = f(s), k2 = f(s.map((v, i) => v + k1[i] * dt / 2)), k3 = f(s.map((v, i) => v + k2[i] * dt / 2)), k4 = f(s.map((v, i) => v + k3[i] * dt));
+    s = s.map((v, i) => v + dt / 6 * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])); t += dt;
+    if (stopAtSurface && Math.hypot(s[0], s[1]) <= RM) { const k = RM / Math.hypot(s[0], s[1]); pts.push([s[0] * k, s[1] * k]); break; }
+    pts.push([s[0], s[1]]);
+  }
+  return { pts, dt: Math.abs(dt), dur: Math.abs(t), vEnd: Math.hypot(s[2], s[3]) };
+}
+function samplePts(arc, u) { // u seconds along the arc
+  const i = Math.min(arc.pts.length - 1, Math.max(0, u / arc.dt)); const i0 = Math.floor(i), i1 = Math.min(arc.pts.length - 1, i0 + 1), f = i - i0;
+  return [arc.pts[i0][0] * (1 - f) + arc.pts[i1][0] * f, arc.pts[i0][1] * (1 - f) + arc.pts[i1][1] * f];
+}
+function episodes(n) {
+  if (M.cache.has(n)) return M.cache.get(n);
+  const T = M.Trel, tb = 2 * n * T, tt = tb + T / 2, tc = tb + 1.5 * T, td = tb + 2 * T;
+  const lift = { col: C.ox, kind: 'lift', tb, tt };
+  if (lmode === 'full') { lift.groundTh = M.Om * tb; lift.preStart = tb - 0.7 * T; }
+  else { const a = ballistic(tipState(tb), -2, 3000, true); lift.hop = a; lift.preStart = tb - a.dur - 0.4 * T; }
+  lift.post = ballistic(tipState(tt), 3, 700, false);
+  const del = { col: C.earth, kind: 'del', tc, td };
+  del.pre = ballistic(tipState(tc), -3, 700, false);
+  if (lmode === 'full') { del.groundTh = M.Om * td; del.postEnd = td + 0.7 * T; }
+  else { const a = ballistic(tipState(td), 2, 3000, true); del.fall = a; del.postEnd = td + a.dur + 0.4 * T; }
+  const ep = [lift, del]; M.cache.set(n, ep);
+  if (M.cache.size > 8) M.cache.delete(M.cache.keys().next().value);
+  return ep;
+}
+function podPos(e, t) {
+  if (e.kind === 'lift') {
+    if (t < e.preStart || t > e.tt + 700) return null;
+    if (t < e.tb) {
+      if (lmode === 'full') return { p: [RM * Math.cos(e.groundTh), RM * Math.sin(e.groundTh)], st: 'pad' };
+      const tl = e.tb - e.hop.dur;
+      if (t < tl) { const q = e.hop.pts[e.hop.pts.length - 1]; return { p: q, st: 'pad' }; }
+      return { p: samplePts(e.hop, e.tb - t), st: 'hop', burn: t - tl < 25 };
+    }
+    if (t <= e.tt) { const s = tipState(t); return { p: [s[0], s[1]], st: 'ride' }; }
+    return { p: samplePts(e.post, t - e.tt), st: 'free' };
+  } else {
+    if (t < e.tc - 700 || t > e.postEnd) return null;
+    if (t < e.tc) return { p: samplePts(e.pre, e.tc - t), st: 'free' };
+    if (t <= e.td) { const s = tipState(t); return { p: [s[0], s[1]], st: 'ride' }; }
+    if (lmode === 'full') return { p: [RM * Math.cos(e.groundTh), RM * Math.sin(e.groundTh)], st: 'pad' };
+    const u = t - e.td;
+    if (u < e.fall.dur) return { p: samplePts(e.fall, u), st: 'hop', burn: e.fall.dur - u < 25 };
+    const q = e.fall.pts[e.fall.pts.length - 1]; return { p: q, st: 'pad' };
+  }
+}
+const CRATERS = (() => { const a = stars(900, 3); return a.map(([u, v, w]) => [u * 2 * Math.PI, 3 + v * v * 40, w]); })();
+
+const lcv = document.getElementById('lunar');
+function drawLunar() {
+  const { ctx, W, H } = fitCanvas(lcv);
+  ctx.fillStyle = C.space; ctx.fillRect(0, 0, W, H); drawStars(ctx, W, H);
+  const viewKm = W < 560 ? 520 : 820; const s = W / viewKm;
+  const cyC = H * (W < 560 ? 0.34 : 0.32);
+  const cyM = cyC + M.r * s;
+  const [, , thc] = centerAt(tsim);
+  const al = Math.PI / 2 - thc, ca = Math.cos(al), sa = Math.sin(al);
+  const P = (x, y) => { const X = x * ca - y * sa, Y = x * sa + y * ca; return [W / 2 - X * s, cyM - Y * s]; };
+  // surface
+  ctx.beginPath(); ctx.arc(W / 2, cyM, RM * s, 0, Math.PI * 2);
+  const g = ctx.createLinearGradient(0, cyM - RM * s, 0, H); g.addColorStop(0, '#8d877c'); g.addColorStop(0.04, '#4a463f'); g.addColorStop(1, '#2a2824');
+  ctx.fillStyle = g; ctx.fill();
+  for (const [th, d, w] of CRATERS) {
+    const [x, y] = P(RM * Math.cos(th), RM * Math.sin(th));
+    if (x < -60 || x > W + 60 || y > H + 60) continue;
+    const ang = Math.atan2(y - cyM, x - W / 2) + Math.PI / 2;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.beginPath(); ctx.ellipse(0, d * s * 0.18 + 1, d * s * 0.5, d * s * 0.12, 0, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(20,18,15,${0.25 + w * 0.3})`; ctx.fill(); ctx.restore();
+  }
+  // altitude ticks
+  ctx.font = `11px ${MONO}`; ctx.fillStyle = C.muted; ctx.strokeStyle = 'rgba(127,135,154,.25)'; ctx.setLineDash([3, 5]);
+  for (const a of [50, 100, 150, 200]) { ctx.beginPath(); ctx.arc(W / 2, cyM, (RM + a) * s, -Math.PI / 2 - 0.6, -Math.PI / 2 + 0.6); ctx.stroke(); ctx.fillText(a + ' km', 8, cyM - (RM + a) * s - 3); }
+  ctx.setLineDash([]);
+  // tip trail (ground frame)
+  ctx.beginPath(); const N = 220, span = 1.6 * M.Trel;
+  for (let i = 0; i <= N; i++) { const tt = tsim - span + span * i / N; const st = tipState(tt); const [x, y] = P(st[0], st[1]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+  ctx.strokeStyle = 'rgba(240,162,59,.55)'; ctx.lineWidth = 1.5; ctx.stroke();
+  // orbit track of center
+  ctx.beginPath(); ctx.arc(W / 2, cyM, M.r * s, -Math.PI / 2 - 0.7, -Math.PI / 2 + 0.7); ctx.strokeStyle = 'rgba(232,234,240,.12)'; ctx.lineWidth = 1; ctx.stroke();
+  // tether
+  const ph = Math.PI + M.w * tsim, cx = M.r * Math.cos(thc), cy = M.r * Math.sin(thc);
+  const A = P(cx + M.L * Math.cos(ph), cy + M.L * Math.sin(ph)), B = P(cx - M.L * Math.cos(ph), cy - M.L * Math.sin(ph)), O = P(cx, cy);
+  ctx.beginPath(); ctx.moveTo(A[0], A[1]); ctx.lineTo(B[0], B[1]); ctx.strokeStyle = C.tether; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(O[0], O[1], 5, 0, 7); ctx.fill();
+  ctx.fillStyle = C.tether; for (const q of [A, B]) { ctx.beginPath(); ctx.arc(q[0], q[1], 3.5, 0, 7); ctx.fill(); }
+  ctx.fillStyle = C.ink2; ctx.font = `12px ${MONO}`; ctx.fillText('station + ballast', O[0] + 9, O[1] - 8);
+  // payloads
+  const n0 = Math.floor(tsim / (2 * M.Trel));
+  for (let n = n0 - 1; n <= n0 + 1; n++) for (const e of episodes(n)) {
+    const q = podPos(e, tsim); if (!q) continue;
+    const [x, y] = P(q.p[0], q.p[1]);
+    if (q.st === 'pad') { ctx.fillStyle = C.ink2; ctx.fillRect(x - 9, y - 1, 18, 3); }
+    if (q.burn) { ctx.fillStyle = C.warn; ctx.beginPath(); ctx.arc(x, y + 6, 3, 0, 7); ctx.fill(); }
+    ctx.fillStyle = e.col; ctx.beginPath(); ctx.arc(x, y - (q.st === 'pad' ? 4 : 0), 5, 0, 7); ctx.fill();
+    ctx.strokeStyle = C.space; ctx.lineWidth = 2; ctx.stroke();
+  }
+  ctx.fillStyle = C.muted; ctx.font = `11px ${MONO}`; ctx.fillText('direction of orbit →', W - 150, 18);
+  const ck = document.getElementById('l-clock'); if (ck) { const tm = ((tsim % 86400) / 60); ck.textContent = `T+${Math.floor(tm / 60)}h ${String(Math.floor(tm % 60)).padStart(2, '0')}m`; }
+}
+
+/* ================= SYSTEM VIEW ================= */
+let smode = 'schem', splay = !reduce, ts = 0; const LOOP = 18;
+const scv = document.getElementById('system');
+function geom(W, H) {
+  if (smode === 'schem') {
+    const Re = Math.min(W, H) * 0.12, Rm = Re * 0.36;
+    return { E: [W * 0.17, H * 0.56], Re, Mo: [W * 0.83, H * 0.44], Rm, rE: Re * 1.4, LE: Re * 0.3, rM: Rm * 1.75, LM: Rm * 0.72, label: 'Schematic: sizes and distances are not to scale. Real coast takes about 3–5 days.' };
+  }
+  const D = W * 0.8, k = D / 384400;
+  return { E: [W * 0.1, H * 0.5], Re: 6371 * k, Mo: [W * 0.9, H * 0.5], Rm: 1737 * k, rE: 6871 * k, LE: 100 * k, rM: 1887 * k, LM: 150 * k, label: `True scale: 1 px ≈ ${Math.round(1 / k).toLocaleString()} km. Each tether arm is about ${(150 * k).toFixed(2)} px long.` };
+}
+const ang = (c, r, a) => [c[0] + r * Math.cos(a), c[1] - r * Math.sin(a)];
+function tetherTip(G, which, t, bottom0) {
+  const c = which === 'E' ? G.E : G.Mo, r = which === 'E' ? G.rE : G.rM, L = which === 'E' ? G.LE : G.LM;
+  const per = which === 'E' ? 9 : 6, a = 2 * Math.PI * t / per;
+  const ph = a + Math.PI + (Math.PI / 1.5) * (t - bottom0);
+  const ctr = ang(c, r, a); return { ctr, tip: [ctr[0] + L * Math.cos(ph), ctr[1] - L * Math.sin(ph)], ph };
+}
+function tipVel(G, which, t, b0) { const a = tetherTip(G, which, t - 0.01, b0).tip, b = tetherTip(G, which, t + 0.01, b0).tip; const d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return [(b[0] - a[0]) / d, (b[1] - a[1]) / d]; }
+function bez(p0, p1, p2, p3, u) { const v = 1 - u; return [0, 1].map(i => v * v * v * p0[i] + 3 * v * v * u * p1[i] + 3 * v * u * u * p2[i] + u * u * u * p3[i]); }
+function coast(G, from, t0, fb, to, t1, tb, t) {
+  const P0 = tetherTip(G, from, t0, fb).tip, P3 = tetherTip(G, to, t1, tb).tip;
+  const v0 = tipVel(G, from, t0, fb), v3 = tipVel(G, to, t1, tb); const k = Math.hypot(P3[0] - P0[0], P3[1] - P0[1]) * 0.4;
+  const P1 = [P0[0] + v0[0] * k, P0[1] + v0[1] * k], P2 = [P3[0] - v3[0] * k, P3[1] - v3[1] * k];
+  return { pos: bez(P0, P1, P2, P3, Math.min(1, Math.max(0, (t - t0) / (t1 - t0)))), path: [P0, P1, P2, P3] };
+}
+const EB = 2.5, MB = 0.5;
+function sysStep(t) {
+  if (t < 2.5) return 'Rocket lifts cargo to low Earth orbit';
+  if (t < 4) return 'LEO booster tether catches it at the bottom of its swing';
+  if (t < 5) return 'Thrown from the top tip toward the Moon. Lunar oxygen leaves the rotovator the other way';
+  if (t < 11) return 'Coasting. Two pods pass each other between the worlds';
+  if (t < 12.5) return 'Lunar rotovator catches Earth cargo at the top and lowers it';
+  if (t < 14.5) return 'Cargo set down at the south pole. LEO tether catches the returning oxygen pod';
+  if (t < 16.5) return 'Oxygen delivered to a LEO depot (shown descending)';
+  return 'Momentum in = momentum out: both tethers stay in orbit';
+}
+function drawSystem() {
+  const { ctx, W, H } = fitCanvas(scv); const G = geom(W, H); const t = ts;
+  ctx.fillStyle = C.space; ctx.fillRect(0, 0, W, H); drawStars(ctx, W, H);
+  // Earth & Moon
+  ctx.fillStyle = '#1f5fae'; ctx.beginPath(); ctx.arc(G.E[0], G.E[1], Math.max(G.Re, 2), 0, 7); ctx.fill();
+  if (G.Re > 6) { ctx.strokeStyle = 'rgba(57,135,229,.35)'; ctx.lineWidth = 3; ctx.stroke(); }
+  ctx.fillStyle = '#8f8a80'; ctx.beginPath(); ctx.arc(G.Mo[0], G.Mo[1], Math.max(G.Rm, 1.5), 0, 7); ctx.fill();
+  ctx.setLineDash([2, 5]); ctx.strokeStyle = 'rgba(232,234,240,.18)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(G.E[0], G.E[1], G.rE, 0, 7); ctx.stroke(); ctx.beginPath(); ctx.arc(G.Mo[0], G.Mo[1], G.rM, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+  // tethers
+  for (const [w, b0] of [['E', EB], ['M', MB]]) {
+    const T = tetherTip(G, w, t, b0); const o = [2 * T.ctr[0] - T.tip[0], 2 * T.ctr[1] - T.tip[1]];
+    ctx.strokeStyle = C.tether; ctx.lineWidth = smode === 'schem' ? 2 : 1; ctx.beginPath(); ctx.moveTo(T.tip[0], T.tip[1]); ctx.lineTo(o[0], o[1]); ctx.stroke();
+    ctx.fillStyle = C.tether; ctx.beginPath(); ctx.arc(T.ctr[0], T.ctr[1], smode === 'schem' ? 3 : 1.5, 0, 7); ctx.fill();
+  }
+  // coast paths (faint)
+  const out = coast(G, 'E', 4, EB, 'M', 11, MB, t), back = coast(G, 'M', 5, MB, 'E', 13, EB, t);
+  for (const c of [out, back]) { ctx.beginPath(); ctx.moveTo(...c.path[0]); ctx.bezierCurveTo(...c.path[1], ...c.path[2], ...c.path[3]); ctx.strokeStyle = 'rgba(232,234,240,.08)'; ctx.lineWidth = 1; ctx.stroke(); }
+  const pods = [];
+  // outbound Earth cargo
+  if (t < 2.5) { const tip = tetherTip(G, 'E', 2.5, EB).tip; const a0 = Math.atan2(-(tip[1] - G.E[1]), tip[0] - G.E[0]) - 0.9; const S = ang(G.E, G.Re, a0); const Cc = ang(G.E, G.Re * 1.25, a0 + 0.2); const u = (t / 2.5) ** 1.6; const v = 1 - u; pods.push([[v * v * S[0] + 2 * v * u * Cc[0] + u * u * tip[0], v * v * S[1] + 2 * v * u * Cc[1] + u * u * tip[1]], C.earth, true]); }
+  else if (t < 4) pods.push([tetherTip(G, 'E', t, EB).tip, C.earth]);
+  else if (t < 11) pods.push([out.pos, C.earth]);
+  else if (t < 12.5) pods.push([tetherTip(G, 'M', t, MB).tip, C.earth]);
+  else if (t < 14.5) { const p = tetherTip(G, 'M', 12.5, MB).tip; const d = Math.hypot(p[0] - G.Mo[0], p[1] - G.Mo[1]) || 1; pods.push([[G.Mo[0] + (p[0] - G.Mo[0]) / d * G.Rm, G.Mo[1] + (p[1] - G.Mo[1]) / d * G.Rm], C.earth]); }
+  // lunar oxygen
+  if (t >= 1.5 && t < 3.5) { const p = tetherTip(G, 'M', 3.5, MB).tip; const d = Math.hypot(p[0] - G.Mo[0], p[1] - G.Mo[1]) || 1; pods.push([[G.Mo[0] + (p[0] - G.Mo[0]) / d * G.Rm, G.Mo[1] + (p[1] - G.Mo[1]) / d * G.Rm], C.ox]); }
+  else if (t >= 3.5 && t < 5) pods.push([tetherTip(G, 'M', t, MB).tip, C.ox]);
+  else if (t >= 5 && t < 13) pods.push([back.pos, C.ox]);
+  else if (t >= 13 && t < 14.5) pods.push([tetherTip(G, 'E', t, EB).tip, C.ox]);
+  else if (t >= 14.5 && t < 16.5) { const p = tetherTip(G, 'E', 14.5, EB).tip; const dep = ang(G.E, G.rE * 0.86 + G.Re * 0.14, Math.atan2(-(p[1] - G.E[1]), p[0] - G.E[0]) + 0.5); const u = (t - 14.5) / 2; pods.push([[p[0] + (dep[0] - p[0]) * u, p[1] + (dep[1] - p[1]) * u], C.ox]); }
+  for (const [p, col, flame] of pods) {
+    ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = smode === 'schem' ? 6 : 12;
+    ctx.beginPath(); ctx.arc(p[0], p[1], smode === 'schem' ? 5 : 3.5, 0, 7); ctx.fill(); ctx.shadowBlur = 0;
+    if (flame) { ctx.fillStyle = C.warn; ctx.beginPath(); ctx.arc(p[0] - 3, p[1] + 5, 2.5, 0, 7); ctx.fill(); }
+  }
+  ctx.fillStyle = C.ink2; ctx.font = `12px ${MONO}`;
+  ctx.fillText('Earth', G.E[0] - 18, G.E[1] + Math.max(G.Re, 4) + 18);
+  ctx.fillText('Moon', G.Mo[0] - 16, G.Mo[1] + Math.max(G.Rm, 4) + (smode === 'schem' ? G.rM - G.Rm + 18 : 18));
+  if (smode === 'schem') { ctx.fillStyle = C.tether; ctx.fillText('LEO booster tether', G.E[0] + G.rE * 0.5, G.E[1] - G.rE - 14); ctx.fillText('lunar rotovator', G.Mo[0] - 50, G.Mo[1] - G.rM - 18); }
+  else {
+    const k = (G.Mo[0] - G.E[0]) / 384400, bar = 50000 * k;
+    ctx.strokeStyle = C.muted; ctx.beginPath(); ctx.moveTo(16, H - 20); ctx.lineTo(16 + bar, H - 20); ctx.stroke(); ctx.fillStyle = C.muted; ctx.fillText('50,000 km', 16, H - 28);
+  }
+  ctx.fillStyle = C.muted; ctx.font = `11px ${MONO}`; wrapText(ctx, G.label, 14, 20, W - 28, 15);
+  document.getElementById('s-step').textContent = sysStep(t);
+}
+function wrapText(ctx, txt, x, y, mw, lh) { let line = ''; for (const w of txt.split(' ')) { const tl = line ? line + ' ' + w : w; if (ctx.measureText(tl).width > mw && line) { ctx.fillText(line, x, y); line = w; y += lh; } else line = tl; } ctx.fillText(line, x, y); }
+
+/* ---------------- loop ---------------- */
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (lplay) tsim += dt * warp;
+  if (splay) ts = (ts + dt) % LOOP;
+  drawLunar(); drawSystem(); requestAnimationFrame(frame);
+}
+
+/* ---------------- controls ---------------- */
+function seg(ids, onSel) { ids.forEach(id => document.getElementById(id).addEventListener('click', () => { ids.forEach(j => document.getElementById(j).setAttribute('aria-pressed', String(j === id))); onSel(id); })); }
+seg(['m-full', 'm-part'], id => { lmode = id === 'm-full' ? 'full' : 'part'; setupMode(); tsim = 300; });
+seg(['s-schem', 's-true'], id => { smode = id === 's-schem' ? 'schem' : 'true'; });
+const lp = document.getElementById('l-play'), sp = document.getElementById('s-play');
+const syncBtns = () => { lp.textContent = lplay ? 'Pause' : 'Play'; sp.textContent = splay ? 'Pause' : 'Play'; };
+lp.onclick = () => { lplay = !lplay; syncBtns(); }; sp.onclick = () => { splay = !splay; syncBtns(); };
+const sl = document.getElementById('l-speed'); sl.oninput = () => { warp = +sl.value; document.getElementById('l-speed-v').textContent = warp + '×'; };
+if (reduce) { ts = 7; tsim = 520; }
+syncBtns(); setupMode();
+
+/* ================= CHART ================= */
+let SF = 3;
+const svg = document.getElementById('chart'), tipEl = document.getElementById('tip'), wrapEl = document.getElementById('chart-wrap');
+const JOBS = [
+  { v: 1.0, name: 'Partial lunar rotovator', short: 'lunar partial' },
+  { v: 1.61, name: 'Full lunar rotovator, or elliptical-orbit LEO tether (LEO ↔ Moon)', short: 'lunar / ellip. LEO' },
+  { v: 2.4, name: 'Single LEO tether to GTO', short: 'LEO→GTO' },
+  { v: 3.3, name: 'Circular-orbit LEO tether straight to the Moon', short: 'circ. LEO→Moon' },
+  { v: 3.8, name: 'Atmospheric catch (HASTOL)', short: 'HASTOL' },
+];
+const VERDICT = [['lo', 'Build now'], ['lo', 'Build now'], ['mid', 'Heavy'], ['hi', 'Impractical'], ['hi', 'Impractical']];
+document.getElementById('legend').innerHTML = FIBERS.map(f => `<span class="key"><span class="dot" style="background:${f.col}"></span>${f.name}</span>`).join('');
+function drawChart() {
+  const W = 900, H = 420, m = { l: 58, r: 96, t: 18, b: 46 };
+  const x = v => m.l + (v - 0.5) / (4.0 - 0.5) * (W - m.l - m.r);
+  const ymin = -1, ymax = 4; const y = r => m.t + (1 - (Math.log10(Math.max(r, 1e-3)) - ymin) / (ymax - ymin)) * (H - m.t - m.b);
+  let s = '';
+  for (let e = ymin; e <= ymax; e++) { const yy = y(10 ** e); s += `<line x1="${m.l}" x2="${W - m.r}" y1="${yy}" y2="${yy}" stroke="var(--line)" stroke-width="1"/><text x="${m.l - 8}" y="${yy + 4}" text-anchor="end" font-size="12" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${(10 ** e).toLocaleString()}×</text>`; }
+  for (let v = 0.5; v <= 4.01; v += 0.5) s += `<text x="${x(v)}" y="${H - m.b + 20}" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${v.toFixed(1)}</text>`;
+  s += `<text x="${(m.l + W - m.r) / 2}" y="${H - 6}" text-anchor="middle" font-size="12" fill="var(--ink-2)">Tip speed relative to tether center (km/s)</text>`;
+  JOBS.forEach((j, i) => { const xx = x(j.v); s += `<line x1="${xx}" x2="${xx}" y1="${m.t}" y2="${H - m.b}" stroke="var(--muted)" stroke-dasharray="3 4" stroke-width="1" opacity=".6"/><text x="${xx + 4}" y="${m.t + 12 + (i % 2) * 14}" font-size="11.5" fill="var(--ink-2)" font-family="IBM Plex Mono, monospace">${j.short}</text>`; });
+  FIBERS.forEach(f => {
+    const vc = Vc(f, SF); let d = ''; let lastPt = null;
+    for (let v = 0.5; v <= 4.0001; v += 0.02) { const r = massRatio(v, vc); if (r > 10 ** ymax) break; const p = [x(v), y(r)]; d += (d ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); lastPt = [v, p]; }
+    s += `<path d="${d}" fill="none" stroke="${f.col}" stroke-width="2" stroke-linejoin="round"/>`;
+    const lx = lastPt[1][0], ly = lastPt[1][1];
+    s += `<circle cx="${lx}" cy="${ly}" r="4" fill="${f.col}" stroke="var(--panel)" stroke-width="2"/><text x="${Math.min(lx + 8, W - m.r + 6)}" y="${ly + 4}" font-size="12" fill="var(--ink-2)">${f.name.split(' ')[0]}</text>`;
+  });
+  s += `<line id="xh" x1="0" x2="0" y1="${m.t}" y2="${H - m.b}" stroke="var(--ink-2)" stroke-width="1" visibility="hidden"/><rect id="hit" x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent"/>`;
+  svg.innerHTML = s.replace(/var\((--[\w-]+)\)/g, (_, n) => css(n));
+  const hit = svg.querySelector('#hit'), xh = svg.querySelector('#xh');
+  const move = ev => {
+    const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const v = Math.min(4, Math.max(0.5, 0.5 + (loc.x - m.l) / (W - m.l - m.r) * 3.5));
+    xh.setAttribute('x1', x(v)); xh.setAttribute('x2', x(v)); xh.setAttribute('visibility', 'visible');
+    tipEl.innerHTML = `<b>${v.toFixed(2)} km/s</b> · SF ${SF}<br>` + FIBERS.map(f => { const r = massRatio(v, Vc(f, SF)); return `<span class="dot" style="background:${f.col};width:8px;height:8px"></span> ${f.name}: ${r < 100 ? r.toFixed(1) : Math.round(r).toLocaleString()}×`; }).join('<br>');
+    tipEl.hidden = false; const wr = wrapEl.getBoundingClientRect(); let lx = ev.clientX - wr.left + 14; if (lx > wr.width - 210) lx = ev.clientX - wr.left - 214; tipEl.style.left = lx + 'px'; tipEl.style.top = Math.max(4, ev.clientY - wr.top - 30) + 'px';
+  };
+  hit.addEventListener('pointermove', move); hit.addEventListener('pointerdown', move);
+  hit.addEventListener('pointerleave', () => { tipEl.hidden = true; xh.setAttribute('visibility', 'hidden'); });
+  document.getElementById('jobs').innerHTML = JOBS.map((j, i) => {
+    const f = n => n < 100 ? n.toFixed(1) + '×' : Math.round(n).toLocaleString() + '×';
+    return `<tr><th>${j.name}</th><td class="mono">${j.v.toFixed(2)} km/s</td><td class="mono">${f(massRatio(j.v, Vc(FIBERS[0], 2)))}</td><td class="mono">${f(massRatio(j.v, Vc(FIBERS[0], 3)))}</td><td><span class="pill ${VERDICT[i][0]}">${VERDICT[i][1]}</span></td></tr>`;
+  }).join('');
+}
+seg(['sf2', 'sf3'], id => { SF = id === 'sf2' ? 2 : 3; drawChart(); });
+drawChart();
+requestAnimationFrame(frame);
+})();
+</script>
